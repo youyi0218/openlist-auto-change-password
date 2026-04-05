@@ -1,12 +1,23 @@
 from __future__ import annotations
 
 import json
+import socket
 from pathlib import Path
+
+import pytest
 
 from app.config import load_config
 from app.logging_utils import configure_logging
 from app.openlist_client import OpenListClient
 from app.service import render_only, rotate_passwords
+
+
+def _can_connect(host: str, port: int, timeout: float = 1.5) -> bool:
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except OSError:
+        return False
 
 
 def write_test_config(tmp_path: Path, target_path: str) -> Path:
@@ -85,6 +96,9 @@ def write_test_config(tmp_path: Path, target_path: str) -> Path:
 
 
 def test_openlist_password_rotation_preserves_other_fields(tmp_path: Path):
+    if not _can_connect("127.0.0.1", 5244):
+        pytest.skip("本地 OpenList 测试服务未启动，跳过集成测试")
+
     target_path = f"/auto-test-{tmp_path.name}"
     config_path = write_test_config(tmp_path, target_path)
     config = load_config(config_path)
