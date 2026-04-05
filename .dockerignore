@@ -1,0 +1,11 @@
+.git
+.github
+.pytest_cache
+.venv
+__pycache__
+dist
+output
+logs
+private
+tests
+.openlist-windows-amd64

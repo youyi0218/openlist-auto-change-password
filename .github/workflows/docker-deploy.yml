@@ -1,0 +1,73 @@
+name: docker-deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Run tests
+        run: pytest
+
+      - name: Build Docker image
+        run: docker build -t openlist-auto-change-password:latest .
+
+      - name: Save Docker image
+        if: ${{ secrets.DEPLOY_HOST != '' && secrets.DEPLOY_USER != '' && secrets.DEPLOY_SSH_KEY != '' && secrets.DEPLOY_PATH != '' }}
+        run: docker save openlist-auto-change-password:latest | gzip > openlist-auto-change-password.tar.gz
+
+      - name: Copy deployment files to server
+        if: ${{ secrets.DEPLOY_HOST != '' && secrets.DEPLOY_USER != '' && secrets.DEPLOY_SSH_KEY != '' && secrets.DEPLOY_PATH != '' }}
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || '22' }}
+          overwrite: true
+          source: "docker-compose.yml,openlist-auto-change-password.tar.gz,config/config.example.json"
+          target: ${{ secrets.DEPLOY_PATH }}
+
+      - name: Deploy on remote server
+        if: ${{ secrets.DEPLOY_HOST != '' && secrets.DEPLOY_USER != '' && secrets.DEPLOY_SSH_KEY != '' && secrets.DEPLOY_PATH != '' }}
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || '22' }}
+          script: |
+            set -e
+            DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+            mkdir -p "$DEPLOY_PATH/config" "$DEPLOY_PATH/dist" "$DEPLOY_PATH/output" "$DEPLOY_PATH/logs"
+            if [ ! -f "$DEPLOY_PATH/config/config.json" ]; then
+              cp "$DEPLOY_PATH/config.example.json" "$DEPLOY_PATH/config/config.json"
+              echo "已在服务器生成示例配置：$DEPLOY_PATH/config/config.json"
+              echo "请先填写真实配置，再重新运行 workflow。"
+              exit 1
+            fi
+            docker load -i "$DEPLOY_PATH/openlist-auto-change-password.tar.gz"
+            cd "$DEPLOY_PATH"
+            docker compose up -d --force-recreate --remove-orphans
+            rm -f "$DEPLOY_PATH/openlist-auto-change-password.tar.gz"

@@ -1,0 +1,68 @@
+{
+  "openlist": {
+    "baseUrl": "http://127.0.0.1:5244",
+    "username": "admin",
+    "password": "??????? OpenList ?????",
+    "timeoutSeconds": 30
+  },
+  "passwordPolicy": {
+    "length": 16,
+    "useLowercase": true,
+    "useUppercase": true,
+    "useNumbers": true,
+    "useSymbols": false,
+    "symbols": "!@#$%^&*()-_=+[]{};:,.?"
+  },
+  "targets": [
+    {
+      "path": "/",
+      "createWhenMissing": true,
+      "createDefaults": {
+        "p_sub": false,
+        "write": true,
+        "w_sub": true,
+        "hide": "",
+        "h_sub": false,
+        "readme": "",
+        "r_sub": false,
+        "header": "",
+        "header_sub": false
+      }
+    }
+  ],
+  "schedule": {
+    "enabled": true,
+    "cron": "0 10 * * 4",
+    "timezone": "Asia/Shanghai",
+    "runOnStart": false
+  },
+  "html": {
+    "title": "???",
+    "subtitle": "",
+    "passwordHint": "",
+    "templateFile": "templates/password_page.html",
+    "outputFile": "dist/index.html",
+    "buttons": []
+  },
+  "state": {
+    "file": "output/state.json"
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "logs/app.log",
+    "maxBytes": 1048576,
+    "backupCount": 3,
+    "console": true
+  },
+  "cloudflare": {
+    "enabled": false,
+    "projectName": "pan-password",
+    "accountId": "",
+    "apiToken": "??????? Cloudflare Pages API Token",
+    "branch": "main",
+    "createProjectIfMissing": true,
+    "skipCaching": false,
+    "pollAttempts": 20,
+    "pollIntervalSeconds": 3
+  }
+}

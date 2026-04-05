@@ -1,0 +1,10 @@
+__pycache__/
+.pytest_cache/
+.venv/
+.wrangler/
+.openlist-windows-amd64/
+dist/
+output/
+logs/
+config/config.test.json
+private/

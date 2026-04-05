@@ -1,0 +1,13 @@
+services:
+  openlist-auto-change-password:
+    image: openlist-auto-change-password:latest
+    container_name: openlist-auto-change-password
+    restart: unless-stopped
+    command: ["python", "main.py", "daemon", "--config", "config/config.json"]
+    environment:
+      TZ: Asia/Shanghai
+    volumes:
+      - ./config:/app/config
+      - ./dist:/app/dist
+      - ./output:/app/output
+      - ./logs:/app/logs

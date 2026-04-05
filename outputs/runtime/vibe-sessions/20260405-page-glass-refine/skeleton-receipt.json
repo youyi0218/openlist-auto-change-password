@@ -1,0 +1,12 @@
+{
+  "runId": "20260405-page-glass-refine",
+  "timestamp": "2026-04-05T16:48:05.044281",
+  "repo": "E:\\项目\\openlist-auto-password",
+  "checked": [
+    "templates/password_page.html",
+    "main.py",
+    "app/template_renderer.py",
+    "tests/test_render_and_schedule.py"
+  ],
+  "mode": "interactive_governed-lite"
+}

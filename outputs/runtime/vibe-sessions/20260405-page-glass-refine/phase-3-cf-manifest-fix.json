@@ -1,0 +1,19 @@
+{
+  "phase": "cf-manifest-fix",
+  "timestamp": "2026-04-05T17:49:28.159799",
+  "changedFiles": [
+    "app/cloudflare_pages.py",
+    "templates/password_page.html",
+    "dist/index.html"
+  ],
+  "findings": [
+    "Cloudflare Pages create deployment manifest keys must use relative paths without leading slash",
+    "Previous uploader used /index.html style keys, causing deployment success but runtime failure",
+    "After fix, pan-password.pages.dev returned HTTP 200"
+  ],
+  "verification": [
+    "python main.py render-only",
+    "pytest",
+    "requests GET https://pan-password.pages.dev => 200"
+  ]
+}
