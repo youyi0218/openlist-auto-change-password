@@ -46,10 +46,10 @@ def _extract_error_message(payload: dict[str, Any]) -> str:
     return str(payload.get("result") or payload.get("message") or "未知错误")
 
 
-def sha256_hex(binary: bytes) -> str:
+def md5_hex(binary: bytes) -> str:
     import hashlib
 
-    return hashlib.sha256(binary).hexdigest()
+    return hashlib.md5(binary).hexdigest()
 
 
 def _bearer_headers(token: str) -> dict[str, str]:
@@ -119,7 +119,7 @@ class CloudflarePagesClient:
         missing_hashes = self._check_missing_hashes(upload_jwt, files)
         self._upload_missing_files(upload_jwt, files, missing_hashes)
         self._upsert_hashes(upload_jwt, files)
-        manifest = {item.relative_path: item.sha256 for item in files}
+        manifest = {f"/{item.relative_path}": item.sha256 for item in files}
         deployment = self._create_deployment(account_id, manifest, directory.name)
         deployment_detail = self._wait_for_deployment(account_id, deployment["id"])
         aliases = deployment_detail.get("aliases") or []
@@ -145,7 +145,7 @@ class CloudflarePagesClient:
                 AssetFile(
                     relative_path=relative_path,
                     absolute_path=path,
-                    sha256=sha256_hex(binary),
+                    sha256=md5_hex(binary),
                     size=len(binary),
                     content_type=content_type,
                 )
@@ -245,7 +245,7 @@ class CloudflarePagesClient:
         response = self.session.post(
             f"{API_BASE}/accounts/{account_id}/pages/projects/{self.config.project_name}/deployments",
             headers=_bearer_headers(self.config.api_token),
-            data={"branch": self.config.branch, "pages_build_output_dir": output_dir_name},
+            data={"branch": self.config.branch},
             files={
                 "manifest": (None, json.dumps(manifest, ensure_ascii=False), "application/json"),
             },
