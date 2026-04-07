@@ -5,6 +5,9 @@ __pycache__/
 .openlist-windows-amd64/
 dist/
 output/
+outputs/
 logs/
+docs/
+config/config.json
 config/config.test.json
 private/

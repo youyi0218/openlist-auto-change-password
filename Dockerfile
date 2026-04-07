@@ -17,8 +17,11 @@ COPY app ./app
 COPY config ./config
 COPY templates ./templates
 COPY main.py ./
-COPY README.md README.me ./
+COPY README.md ./
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
-RUN mkdir -p /app/dist /app/output /app/logs
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
+    && mkdir -p /app/dist /app/output /app/logs
 
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["python", "main.py", "daemon", "--config", "config/config.json"]

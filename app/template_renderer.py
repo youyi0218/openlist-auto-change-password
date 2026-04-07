@@ -26,6 +26,13 @@ def _render_buttons(buttons: list[dict]) -> str:
     return "\n".join(parts)
 
 
+def _copy_static_assets(template_path: Path, output_path: Path) -> None:
+    for asset_name in ("favicon.svg", "jingnan-round.ttf"):
+        asset_source = template_path.with_name(asset_name)
+        if asset_source.exists():
+            shutil.copy2(asset_source, output_path.parent / asset_name)
+
+
 def render_html(template_path: Path, output_path: Path, payload: dict) -> None:
     template = template_path.read_text(encoding="utf-8")
     page_data_json = json.dumps(
@@ -57,9 +64,7 @@ def render_html(template_path: Path, output_path: Path, payload: dict) -> None:
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(rendered, encoding="utf-8")
-    favicon_source = template_path.with_name("favicon.svg")
-    if favicon_source.exists():
-        shutil.copy2(favicon_source, output_path.parent / "favicon.svg")
+    _copy_static_assets(template_path, output_path)
 
 
 def build_html_payload(config, items: list[dict], generated_at, next_rotation_at) -> dict:

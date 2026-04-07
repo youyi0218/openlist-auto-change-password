@@ -2,7 +2,7 @@
   "openlist": {
     "baseUrl": "http://127.0.0.1:5244",
     "username": "admin",
-    "password": "??????? OpenList ?????",
+    "password": "请改成你自己的 OpenList 管理员密码",
     "timeoutSeconds": 30
   },
   "passwordPolicy": {
@@ -37,12 +37,23 @@
     "runOnStart": false
   },
   "html": {
-    "title": "???",
+    "title": "资源站密码",
     "subtitle": "",
-    "passwordHint": "",
+    "passwordHint": "点击密码正文即可复制",
     "templateFile": "templates/password_page.html",
     "outputFile": "dist/index.html",
-    "buttons": []
+    "buttons": [
+      {
+        "title": "网盘资源",
+        "hint": "点击跳转到资源网盘页面",
+        "url": "https://example.com/pan"
+      },
+      {
+        "title": "聚合页",
+        "hint": "点击跳转到聚合页面",
+        "url": "https://example.com/portal"
+      }
+    ]
   },
   "state": {
     "file": "output/state.json"
@@ -56,9 +67,9 @@
   },
   "cloudflare": {
     "enabled": false,
-    "projectName": "pan-password",
+    "projectName": "your-pages-project",
     "accountId": "",
-    "apiToken": "??????? Cloudflare Pages API Token",
+    "apiToken": "",
     "branch": "main",
     "createProjectIfMissing": true,
     "skipCaching": false,

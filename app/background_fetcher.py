@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import mimetypes
+from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlparse
 
 import requests
+from PIL import Image, ImageOps
 
 
 API_ENDPOINTS = {
@@ -41,6 +43,22 @@ def _remove_old_variants(directory: Path, stem: str, keep_name: str) -> None:
             existing.unlink(missing_ok=True)
 
 
+def _compress_image(binary: bytes, stem: str) -> bytes:
+    image = Image.open(BytesIO(binary))
+    image = ImageOps.exif_transpose(image)
+    if image.mode not in ("RGB", "L"):
+        image = image.convert("RGB")
+    elif image.mode == "L":
+        image = image.convert("RGB")
+
+    max_size = (1920, 1920) if stem == "background-landscape" else (1400, 2000)
+    image.thumbnail(max_size, Image.Resampling.LANCZOS)
+
+    output = BytesIO()
+    image.save(output, format="JPEG", quality=82, optimize=True, progressive=True)
+    return output.getvalue()
+
+
 def _download_one(
     session: requests.Session,
     logger,
@@ -59,12 +77,12 @@ def _download_one(
     image_response = session.get(image_url, timeout=60)
     image_response.raise_for_status()
 
-    extension = _guess_extension(image_url, image_response.headers.get("Content-Type"), payload.get("size"))
-    file_name = f"{stem}{extension}"
+    compressed = _compress_image(image_response.content, stem)
+    file_name = f"{stem}.jpg"
     output_path = output_directory / file_name
     output_directory.mkdir(parents=True, exist_ok=True)
     _remove_old_variants(output_directory, stem, file_name)
-    output_path.write_bytes(image_response.content)
+    output_path.write_bytes(compressed)
 
     logger.info("背景图已更新：%s", output_path)
     return f"assets/{file_name}"

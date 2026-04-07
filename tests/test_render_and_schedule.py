@@ -40,6 +40,8 @@ def test_template_render_and_schedule(tmp_path: Path):
         "TITLE={{TITLE}}\nCUR={{CURRENT_DATE}}\nNEXT={{NEXT_DATE}}\nPW={{PASSWORD}}\nHINT={{PASSWORD_HINT}}\nBTN={{BUTTONS_HTML}}\nDATA={{PAGE_DATA_JSON}}",
         encoding="utf-8",
     )
+    (template_dir / "favicon.svg").write_text("<svg></svg>", encoding="utf-8")
+    (template_dir / "jingnan-round.ttf").write_bytes(b"font-binary")
 
     config = load_config(config_path)
     next_time = get_next_rotation_time(
@@ -63,3 +65,5 @@ def test_template_render_and_schedule(tmp_path: Path):
     assert "点击密码正文即可复制" in content
     assert "网盘资源" in content
     assert "2026-04-09 10:00:00" in content
+    assert (tmp_path / "dist/favicon.svg").exists()
+    assert (tmp_path / "dist/jingnan-round.ttf").read_bytes() == b"font-binary"

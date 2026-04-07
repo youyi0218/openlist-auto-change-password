@@ -1,6 +1,6 @@
 services:
   openlist-auto-change-password:
-    image: openlist-auto-change-password:latest
+    image: ghcr.io/youyi0218/openlist-auto-change-password:latest
     container_name: openlist-auto-change-password
     restart: unless-stopped
     command: ["python", "main.py", "daemon", "--config", "config/config.json"]

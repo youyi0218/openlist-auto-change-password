@@ -6,19 +6,16 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 permissions:
   contents: read
+  packages: write
 
 jobs:
-  test-and-build:
+  test-and-publish:
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-      DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
-      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
 
     steps:
       - name: Checkout
@@ -34,47 +31,38 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
 
+      - name: Validate example config
+        run: python main.py validate-config --config config/config.example.json
+
       - name: Run tests
         run: pytest
 
-      - name: Build Docker image
-        run: docker build -t openlist-auto-change-password:latest .
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Save Docker image
-        if: ${{ env.DEPLOY_HOST != '' && env.DEPLOY_USER != '' && env.DEPLOY_SSH_KEY != '' && env.DEPLOY_PATH != '' }}
-        run: docker save openlist-auto-change-password:latest | gzip > openlist-auto-change-password.tar.gz
-
-      - name: Copy deployment files to server
-        if: ${{ env.DEPLOY_HOST != '' && env.DEPLOY_USER != '' && env.DEPLOY_SSH_KEY != '' && env.DEPLOY_PATH != '' }}
-        uses: appleboy/scp-action@v0.1.7
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
         with:
-          host: ${{ env.DEPLOY_HOST }}
-          username: ${{ env.DEPLOY_USER }}
-          key: ${{ env.DEPLOY_SSH_KEY }}
-          port: ${{ env.DEPLOY_PORT || '22' }}
-          overwrite: true
-          source: "docker-compose.yml,openlist-auto-change-password.tar.gz,config/config.example.json"
-          target: ${{ env.DEPLOY_PATH }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Deploy on remote server
-        if: ${{ env.DEPLOY_HOST != '' && env.DEPLOY_USER != '' && env.DEPLOY_SSH_KEY != '' && env.DEPLOY_PATH != '' }}
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
         with:
-          host: ${{ env.DEPLOY_HOST }}
-          username: ${{ env.DEPLOY_USER }}
-          key: ${{ env.DEPLOY_SSH_KEY }}
-          port: ${{ env.DEPLOY_PORT || '22' }}
-          script: |
-            set -e
-            DEPLOY_PATH="${{ env.DEPLOY_PATH }}"
-            mkdir -p "$DEPLOY_PATH/config" "$DEPLOY_PATH/dist" "$DEPLOY_PATH/output" "$DEPLOY_PATH/logs"
-            if [ ! -f "$DEPLOY_PATH/config/config.json" ]; then
-              cp "$DEPLOY_PATH/config/config.example.json" "$DEPLOY_PATH/config/config.json"
-              echo "已在服务器生成示例配置：$DEPLOY_PATH/config/config.json"
-              echo "请先填写真实配置，再重新运行 workflow。"
-              exit 1
-            fi
-            docker load -i "$DEPLOY_PATH/openlist-auto-change-password.tar.gz"
-            cd "$DEPLOY_PATH"
-            docker compose up -d --force-recreate --remove-orphans
-            rm -f "$DEPLOY_PATH/openlist-auto-change-password.tar.gz"
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=sha-
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
